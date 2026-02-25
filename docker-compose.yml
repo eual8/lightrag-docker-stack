@@ -1,0 +1,25 @@
+services:
+  lightrag:
+    container_name: lightrag
+    image: ghcr.io/hkuds/lightrag:latest
+
+    ports:
+      - "${PORT:-9621}:9621"
+
+    env_file:
+      - .env
+
+    volumes:
+      # Персистентные данные
+      - ./data/rag_storage:/app/data/rag_storage
+      - ./data/inputs:/app/data/inputs
+
+      # Конфиги (LightRAG читает .env при старте)
+      - ./.env:/app/.env:ro
+      - ./config.ini:/app/config.ini
+
+    restart: unless-stopped
+
+    # Нужен для доступа из контейнера к сервисам на хосте (например, Ollama)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
