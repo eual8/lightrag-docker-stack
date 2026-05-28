@@ -1,7 +1,7 @@
 services:
   lightrag:
     container_name: lightrag
-    image: ghcr.io/hkuds/lightrag:latest
+    image: ghcr.io/hkuds/lightrag:v1.4.16
     restart: unless-stopped
     env_file:
       - .env
@@ -22,7 +22,7 @@ services:
 
   postgres:
     container_name: lightrag-postgres
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:0.8.2-pg16
     restart: unless-stopped
     environment:
       POSTGRES_USER: lightrag

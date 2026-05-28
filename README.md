@@ -90,6 +90,15 @@ Main variables in `.env`:
 
 This stack uses `PGVectorStorage` for vectors. Switching from another vector backend, such as Qdrant, requires a clean reindex; LightRAG does not migrate vector data between storage implementations.
 
+## Container Image Versions
+
+Container images are pinned to explicit version tags in `docker-compose.yml`:
+- `ghcr.io/hkuds/lightrag:v1.4.16`
+- `pgvector/pgvector:0.8.2-pg16`
+- `neo4j:2026.01.4`
+
+To upgrade intentionally, replace these tags after testing the new images.
+
 ## Security
 
 - Do not commit `.env` to the repository.
