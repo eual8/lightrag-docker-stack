@@ -1,20 +1,17 @@
 # LightRAG Stack (Docker Compose)
 
 Local stack for running [LightRAG](https://github.com/HKUDS/LightRAG) with dedicated storage backends:
-- `PostgreSQL` (metadata and KV)
+- `PostgreSQL` with `pgvector` (metadata, KV, document status, and vector index)
 - `Neo4j` (graph)
-- `Qdrant` (vector index)
 
 ## Architecture
 
 ```mermaid
 flowchart LR
     U["Client / Browser"] --> A["LightRAG API :9621"]
-    A --> P["PostgreSQL :5432"]
+    A --> P["PostgreSQL + pgvector :5432"]
     A --> N["Neo4j :7687"]
-    A --> Q["Qdrant :6333"]
     N --> NB["Neo4j Browser :7474"]
-    Q --> QW["Qdrant UI :6333/dashboard"]
 ```
 
 ## Quick Start
@@ -41,7 +38,6 @@ flowchart LR
 
 - LightRAG API: `http://localhost:9621`
 - Neo4j Browser: `http://localhost:7474`
-- Qdrant REST/UI: `http://localhost:6333`
 - PostgreSQL: `localhost:5432`
 
 ## Data Layout
@@ -52,8 +48,7 @@ data/
 │   ├── inputs/        # source documents for indexing
 │   └── rag_storage/   # LightRAG working files
 ├── neo4j/             # Neo4j data
-├── postgres/          # PostgreSQL data
-└── qdrant/            # Qdrant data
+└── postgres/          # PostgreSQL + pgvector data
 ```
 
 ## Useful Commands
@@ -91,7 +86,9 @@ Main variables in `.env`:
 - `LLM_*` - generation model and endpoint settings
 - `EMBEDDING_*` - embedding model and endpoint settings
 - `LIGHTRAG_*_STORAGE` - storage backend selection
-- `POSTGRES_*`, `NEO4J_*`, `QDRANT_*` - external service connection settings
+- `POSTGRES_*`, `NEO4J_*` - external service connection settings
+
+This stack uses `PGVectorStorage` for vectors. Switching from another vector backend, such as Qdrant, requires a clean reindex; LightRAG does not migrate vector data between storage implementations.
 
 ## Security
 
@@ -104,7 +101,7 @@ Main variables in `.env`:
 `LightRAG does not start due to database readiness`:
 - Wait 10-20 seconds, then check logs:
   ```bash
-  docker compose logs --tail=200 postgres neo4j qdrant lightrag
+  docker compose logs --tail=200 postgres neo4j lightrag
   ```
 
 `Neo4j authentication error`:

@@ -16,7 +16,6 @@ services:
     depends_on:
       - postgres
       - neo4j
-      - qdrant
     extra_hosts:
       # Полезно, если когда-нибудь подключишь Ollama/vLLM на хосте
       - "host.docker.internal:host-gateway"
@@ -55,13 +54,3 @@ services:
       - ./data/neo4j/logs:/logs
       - ./data/neo4j/import:/import
       - ./data/neo4j/plugins:/plugins
-
-  qdrant:
-    container_name: lightrag-qdrant
-    image: qdrant/qdrant:latest
-    restart: unless-stopped
-    ports:
-      - "6333:6333" # REST + Web UI dashboard
-      - "6334:6334" # gRPC
-    volumes:
-      - ./data/qdrant:/qdrant/storage
