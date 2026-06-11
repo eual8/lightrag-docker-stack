@@ -14,8 +14,10 @@ services:
       # Подключаем .env внутрь контейнера (как в официальном compose LightRAG)
       - ./.env:/app/.env:ro
     depends_on:
-      - postgres
-      - neo4j
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
     extra_hosts:
       # Полезно, если когда-нибудь подключишь Ollama/vLLM на хосте
       - "host.docker.internal:host-gateway"
@@ -26,7 +28,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: lightrag
-      POSTGRES_PASSWORD: change_me_strong_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_strong_password}
       POSTGRES_DB: lightrag
     ports:
       - "5432:5432" # можно убрать, если не нужен доступ с хоста
@@ -43,7 +45,7 @@ services:
     image: neo4j:2026.01.4
     restart: unless-stopped
     environment:
-      NEO4J_AUTH: neo4j/change_me_neo4j_password
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-change_me_neo4j_password}
       # Для LightRAG APOC обычно не обязателен, но можно включить позже при необходимости:
       # NEO4J_PLUGINS: '["apoc"]'
     ports:
@@ -54,3 +56,9 @@ services:
       - ./data/neo4j/logs:/logs
       - ./data/neo4j/import:/import
       - ./data/neo4j/plugins:/plugins
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p \"$${NEO4J_AUTH#neo4j/}\" 'RETURN 1'"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 30s

@@ -3,6 +3,7 @@
 Local stack for running [LightRAG](https://github.com/HKUDS/LightRAG) with dedicated storage backends:
 - `PostgreSQL` with `pgvector` (metadata, KV, document status, and vector index)
 - `Neo4j` (graph)
+- local LM Studio embeddings via `text-embedding-bge-m3`
 
 ## Architecture
 
@@ -11,25 +12,35 @@ flowchart LR
     U["Client / Browser"] --> A["LightRAG API :9621"]
     A --> P["PostgreSQL + pgvector :5432"]
     A --> N["Neo4j :7687"]
+    A --> E["LM Studio embeddings :1234"]
     N --> NB["Neo4j Browser :7474"]
 ```
 
 ## Quick Start
 
-1. Prepare environment variables:
+1. In LM Studio, load the embedding model:
+   - Model: `gpustack/bge-m3-GGUF`
+   - File/quantization: `bge-m3-Q8_0.gguf`
+   - Served model name: `text-embedding-bge-m3`
+   - Server port: `1234`
+   - Authentication: off, or use any placeholder key
+2. Prepare environment variables:
    ```bash
    cp .env.example .env
    ```
-2. Fill in secrets in `.env`:
+3. Fill in secrets in `.env`:
    - `LLM_BINDING_API_KEY`
-   - `EMBEDDING_BINDING_API_KEY`
    - `POSTGRES_PASSWORD`
    - `NEO4J_PASSWORD` (must match `NEO4J_AUTH` in `docker-compose.yml`)
-3. Start services:
+4. If you are changing from another embedding model or dimension, reset old data first:
+   ```bash
+   ./scripts/reset-local-storage.sh
+   ```
+5. Start services:
    ```bash
    docker compose up -d
    ```
-4. Verify everything is running:
+6. Verify everything is running:
    ```bash
    docker compose ps
    ```
@@ -37,8 +48,27 @@ flowchart LR
 ## Endpoints
 
 - LightRAG API: `http://localhost:9621`
+- LM Studio OpenAI-compatible API: `http://localhost:1234/v1`
 - Neo4j Browser: `http://localhost:7474`
 - PostgreSQL: `localhost:5432`
+
+## Local Embeddings With LM Studio
+
+The project is configured for `text-embedding-bge-m3` through LM Studio:
+
+```env
+EMBEDDING_BINDING=openai
+EMBEDDING_MODEL=text-embedding-bge-m3
+EMBEDDING_DIM=1024
+EMBEDDING_TOKEN_LIMIT=8192
+EMBEDDING_BINDING_HOST=http://host.docker.internal:1234/v1
+EMBEDDING_BINDING_API_KEY=lm-studio
+EMBEDDING_SEND_DIM=false
+```
+
+`host.docker.internal` is required because LightRAG runs inside Docker. From inside the container, `localhost` would point to the LightRAG container itself, not to LM Studio on the host.
+
+BGE-M3 uses 1024-dimensional embeddings. Existing vectors created with another dimension, such as OpenAI `text-embedding-3-small` at 1536 dimensions or Gemini embeddings, are incompatible with the new PostgreSQL vector schema. Run `./scripts/reset-local-storage.sh` before reindexing documents.
 
 ## Data Layout
 
@@ -76,6 +106,11 @@ docker compose down
 Stop and remove volumes (warning: deletes data):
 ```bash
 docker compose down -v
+```
+
+Reset local LightRAG records after changing embedding model/dimension:
+```bash
+./scripts/reset-local-storage.sh
 ```
 
 ## Configuration
@@ -118,6 +153,11 @@ To upgrade intentionally, replace these tags after testing the new images.
 
 `No responses from LLM/Embeddings`:
 - Verify API keys and endpoint availability for `LLM_BINDING_HOST` and `EMBEDDING_BINDING_HOST`.
+- In LM Studio, verify the local server is running on port `1234` and the loaded embedding model is named `text-embedding-bge-m3`.
+- From the host, check:
+  ```bash
+  curl http://localhost:1234/v1/models
+  ```
 
 ## License
 
