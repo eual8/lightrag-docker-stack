@@ -21,4 +21,6 @@ mkdir -p \
   data/postgres \
   data/neo4j/data
 
-echo "Done. Start again with: docker compose up -d"
+echo "Done. Starting again..."
+
+docker compose up -d

@@ -13,6 +13,8 @@ services:
       - ./data/lightrag/rag_storage:/app/data/rag_storage
       # Подключаем .env внутрь контейнера (как в официальном compose LightRAG)
       - ./.env:/app/.env:ro
+      # Локальный override prompt templates для entity extraction.
+      - ./config/lightrag/prompt.py:/app/lightrag/prompt.py:ro
     depends_on:
       postgres:
         condition: service_healthy
